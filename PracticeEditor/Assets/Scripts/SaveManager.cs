@@ -75,6 +75,7 @@ public class SaveManager
 
     public class SavedTiles
     {
-        public Vector2[] tiles;
+        public Vector2Int[] tiles;
+        public Vector2Int[] squares;
     }
 }

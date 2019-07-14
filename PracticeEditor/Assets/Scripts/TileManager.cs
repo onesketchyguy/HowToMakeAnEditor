@@ -9,7 +9,20 @@ public class TileManager : MonoBehaviour
 
     public TileBase HighLightTile;
 
-    public TileBase GroundTile;
+    public TileBase PlacingTile;
+
+    public TileBase[] possibleTiles;
+    private Dictionary<string, TileBase> tiles = new Dictionary<string, TileBase>();
+
+    private void PopulateDictionary()
+    {
+        foreach (var item in possibleTiles)
+        {
+            tiles.Add(item.name, item);
+        }
+
+        PlacingTile = possibleTiles[0];
+    }
 
     private Vector3Int lastMousePos;
 
@@ -24,6 +37,8 @@ public class TileManager : MonoBehaviour
     }
 
     public Vector2 saveRange = new Vector2(18, 10);
+
+    private void Start() => PopulateDictionary();
 
     private void Update()
     {
@@ -45,9 +60,9 @@ public class TileManager : MonoBehaviour
         }
 
         // Check for left click
-        if (Input.GetButton("Fire1") && FrontTilemap.GetTile(mousePosition) != GroundTile)
+        if (Input.GetButton("Fire1") && FrontTilemap.GetTile(mousePosition) != PlacingTile)
         {
-            FrontTilemap.SetTile(mousePosition, GroundTile);
+            FrontTilemap.SetTile(mousePosition, PlacingTile);
         }
 
         // Check for right click
@@ -59,8 +74,10 @@ public class TileManager : MonoBehaviour
 
     public void Save(string saveName = "0")
     {
-        var TilesToSave = new List<Vector2>();
-        var tiles = new SaveManager.SavedTiles();
+        var Room = new SaveManager.SavedTiles();
+
+        var TilesToSave = new List<Vector2Int>();
+        var SquaresToSave = new List<Vector2Int>();
 
         var worldPosition = new Vector2(saveRange.x / 2, saveRange.y / 2);
 
@@ -74,14 +91,22 @@ public class TileManager : MonoBehaviour
 
                 if (Tile != null)
                 {
-                    TilesToSave.Add(new Vector2(pos.x, pos.y));
+                    if (Tile.name == "Square")
+                    {
+                        SquaresToSave.Add(new Vector2Int(pos.x, pos.y));
+                    }
+                    else
+                    {
+                        TilesToSave.Add(new Vector2Int(pos.x, pos.y));
+                    }
                 }
             }
         }
 
-        tiles.tiles = TilesToSave.ToArray();
+        Room.tiles = TilesToSave.ToArray();
+        Room.squares = SquaresToSave.ToArray();
 
-        SaveManager.Save(tiles, saveName);
+        SaveManager.Save(Room, saveName);
 
         Debug.Log("Saving world...");
     }
@@ -94,11 +119,23 @@ public class TileManager : MonoBehaviour
 
         FrontTilemap.ClearAllTiles();
 
+        var Tile = PlacingTile;
+        var Square = PlacingTile;
+
+        tiles.TryGetValue("Tile", out Tile);
+        tiles.TryGetValue("Square", out Square);
+
         foreach (var tile in loadedTiles.tiles)
         {
             var pos = new Vector3Int((int)tile.x, (int)tile.y, 0);
 
-            FrontTilemap.SetTile(pos, GroundTile);
+            FrontTilemap.SetTile(pos, Tile);
+        }
+        foreach (var tile in loadedTiles.squares)
+        {
+            var pos = new Vector3Int((int)tile.x, (int)tile.y, 0);
+
+            FrontTilemap.SetTile(pos, Square);
         }
     }
 

@@ -13,25 +13,71 @@ public class EditorUI : MonoBehaviour
 
         if (notPlacing)
         {
-            var options = new List<Dropdown.OptionData>();
-            var Saves = SaveManager.LoadAllSaves();
+            UpdateLoadableList();
 
-            foreach (var item in Saves)
+            DestroyAllChildren(TilePalleteParent.transform);
+
+            foreach (var item in tiles)
             {
-                var option = new Dropdown.OptionData(item);
-
-                options.Add(option);
+                CreateObjectFromTile(item);
             }
-
-            savesDropdown.ClearOptions();
-            savesDropdown.AddOptions(options);
         }
+    }
+
+    private void CreateObjectFromTile(TileObject tile)
+    {
+        GameObject go = new GameObject(tile.name);
+        var obj = Instantiate(go, TilePalleteParent.transform) as GameObject;
+        Destroy(go);
+
+        var image = obj.AddComponent<Image>();
+        image.sprite = tile.tileIcon;
+        var button = obj.AddComponent<Button>();
+
+        button.targetGraphic = image;
+        button.onClick.AddListener(() => SwapTile(tile));
+    }
+
+    private void DestroyAllChildren(Transform parent)
+    {
+        foreach (var item in parent.GetComponentsInChildren<Transform>())
+        {
+            if (item == parent) continue;
+
+            Destroy(item.gameObject);
+        }
+    }
+
+    private void SwapTile(TileObject tile)
+    {
+        FindObjectOfType<TileManager>().PlacingTile = tile.baseTile;
+    }
+
+    private void UpdateLoadableList()
+    {
+        var options = new List<Dropdown.OptionData>();
+        var Saves = SaveManager.LoadAllSaves();
+
+        foreach (var item in Saves)
+        {
+            var option = new Dropdown.OptionData(item);
+
+            options.Add(option);
+        }
+
+        savesDropdown.ClearOptions();
+        savesDropdown.AddOptions(options);
     }
 
     public Dropdown savesDropdown;
     public InputField SaveInput;
 
     public GameObject parent;
+
+    [Space]
+    public TileObject[] tiles;
+
+    public GameObject TilePalleteParent;
 
     private void Start()
     {
@@ -66,5 +112,7 @@ public class EditorUI : MonoBehaviour
         }
 
         FindObjectOfType<TileManager>().Save(name);
+
+        UpdateLoadableList();
     }
 }
